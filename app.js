@@ -527,6 +527,28 @@ function initTheme() {
   updateThemeButtonUI(saved);
 }
 
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  updateSoundButtonUI(soundEnabled);
+  showToast(soundEnabled ? 'Đã bật âm thanh phản hồi' : 'Đã tắt âm thanh', soundEnabled ? 'ti-volume' : 'ti-na');
+}
+
+function updateSoundButtonUI(enabled) {
+  const btn = document.getElementById("soundToggle");
+  if (btn) {
+    const iconHtml = enabled
+      ? '<i class="ti-volume"></i>'
+      : '<svg class="icon-mute-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="22" y1="9" x2="16" y2="15"></line><line x1="16" y1="9" x2="22" y2="15"></line></svg>';
+    btn.innerHTML = `${iconHtml} <span class="btn-label">${enabled ? 'Âm thanh' : 'Tắt tiếng'}</span>`;
+    btn.setAttribute("title", enabled ? "Bật âm thanh (Đang bật)" : "Tắt âm thanh (Đang tắt)");
+    if (!enabled) {
+      btn.classList.add("sound-muted");
+    } else {
+      btn.classList.remove("sound-muted");
+    }
+  }
+}
+
 function toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme");
   const next = current === "dark" ? "light" : "dark";
@@ -540,8 +562,8 @@ function updateThemeButtonUI(theme) {
   const btn = document.getElementById("themeToggle");
   if (btn) {
     btn.innerHTML = theme === "dark" 
-      ? '<i class="ti-shine"></i> Sáng' 
-      : '<i class="ti-shine"></i> Tối';
+      ? '<i class="ti-shine"></i> <span class="btn-label">Sáng</span>' 
+      : '<i class="ti-shine"></i> <span class="btn-label">Tối</span>';
     btn.setAttribute("title", theme === "dark" ? "Chuyển sang Giao diện Sáng" : "Chuyển sang Giao diện Tối");
   }
 }
@@ -556,9 +578,9 @@ function switchTab(tabName) {
   const targetPane = document.getElementById(`${tabName}-tab`);
   if (targetPane) targetPane.classList.add("active");
 
-  const floatingHud = document.getElementById("floatingQuizHud");
-  if (floatingHud) {
-    floatingHud.style.display = (tabName === "quiz") ? "flex" : "none";
+  const stickyBar = document.getElementById("stickyQuizBar");
+  if (stickyBar) {
+    stickyBar.style.display = (tabName === "quiz") ? "flex" : "none";
   }
 
   if (tabName === "flashcards") {
@@ -582,15 +604,22 @@ function startPracticeTimer() {
   const chip = document.getElementById("practiceTimer");
   if (chip) chip.classList.remove("paused");
 
-  const hudBadge = document.getElementById("hudTimerBadge");
-  if (hudBadge) hudBadge.classList.remove("paused", "urgent");
-  const hudIcon = document.getElementById("hudTimerToggleIcon");
-  if (hudIcon) {
-    hudIcon.className = "ti-control-pause";
-    hudIcon.style.display = "inline-block";
+  const stickyChip = document.getElementById("stickyTimerChip");
+  if (stickyChip) stickyChip.classList.remove("paused", "urgent");
+  const stickyIcon = document.getElementById("stickyTimerActionIcon");
+  if (stickyIcon) {
+    stickyIcon.className = "ti-control-pause";
+    stickyIcon.style.display = "inline-block";
   }
-  const hudLabel = document.getElementById("hudTimerLabel");
-  if (hudLabel) hudLabel.innerText = "Thời gian:";
+  const stickyLabel = document.getElementById("stickyTimerLabel");
+  if (stickyLabel) stickyLabel.innerText = "Làm bài:";
+
+  const sidebarLabel = document.getElementById("sidebarTimerLabel");
+  if (sidebarLabel) sidebarLabel.innerText = "Thời Gian Làm Bài";
+  const sidebarClock = document.getElementById("sidebarTimerClock");
+  if (sidebarClock) sidebarClock.classList.remove("urgent");
+  const sidebarSub = document.getElementById("sidebarTimerSubText");
+  if (sidebarSub) sidebarSub.innerHTML = '<i id="sidebarTimerIcon" class="ti-control-pause"></i> Nhấp để tạm dừng';
 
   practiceTimerInterval = setInterval(() => {
     if (!isPracticeTimerPaused) {
@@ -608,33 +637,39 @@ function updatePracticeTimerDisplay() {
   const el = document.getElementById("practiceTimerDisplay");
   if (el) el.innerText = timeStr;
 
-  const hudEl = document.getElementById("hudTimerDisplay");
-  if (hudEl) hudEl.innerText = timeStr;
+  const stickyEl = document.getElementById("stickyTimerClock");
+  if (stickyEl) stickyEl.innerText = timeStr;
+
+  const sidebarEl = document.getElementById("sidebarTimerClock");
+  if (sidebarEl) sidebarEl.innerText = timeStr;
 }
 
 function togglePracticeTimer() {
   isPracticeTimerPaused = !isPracticeTimerPaused;
   const icon = document.getElementById("practiceTimerIcon");
   const chip = document.getElementById("practiceTimer");
-  const hudIcon = document.getElementById("hudTimerToggleIcon");
-  const hudBadge = document.getElementById("hudTimerBadge");
+  const stickyIcon = document.getElementById("stickyTimerActionIcon");
+  const stickyChip = document.getElementById("stickyTimerChip");
+  const sidebarSub = document.getElementById("sidebarTimerSubText");
 
   if (isPracticeTimerPaused) {
     if (icon) icon.className = "ti-control-play";
     if (chip) chip.classList.add("paused");
-    if (hudIcon) hudIcon.className = "ti-control-play";
-    if (hudBadge) hudBadge.classList.add("paused");
+    if (stickyIcon) stickyIcon.className = "ti-control-play";
+    if (stickyChip) stickyChip.classList.add("paused");
+    if (sidebarSub) sidebarSub.innerHTML = '<i class="ti-control-play" style="color:var(--warning)"></i> Đang tạm dừng (Nhấp tiếp tục)';
     showToast("Đã tạm dừng đếm thời gian làm bài", "ti-control-pause");
   } else {
     if (icon) icon.className = "ti-control-pause";
     if (chip) chip.classList.remove("paused");
-    if (hudIcon) hudIcon.className = "ti-control-pause";
-    if (hudBadge) hudBadge.classList.remove("paused");
+    if (stickyIcon) stickyIcon.className = "ti-control-pause";
+    if (stickyChip) stickyChip.classList.remove("paused");
+    if (sidebarSub) sidebarSub.innerHTML = '<i class="ti-control-pause"></i> Nhấp để tạm dừng';
     showToast("Tiếp tục tính thời gian làm bài", "ti-control-play");
   }
 }
 
-function handleHudTimerClick() {
+function handleTimerClick() {
   const mode = document.getElementById("quizModeSelect").value;
   if (mode === "practice") {
     togglePracticeTimer();
@@ -654,10 +689,17 @@ function handleModeChange() {
   const practiceTimerBadge = document.getElementById("practiceTimer");
   const resultDiv = document.getElementById("examResult");
   const progressBanner = document.getElementById("quizProgressBanner");
-  const hudLabel = document.getElementById("hudTimerLabel");
-  const hudTimerVal = document.getElementById("hudTimerDisplay");
-  const hudIcon = document.getElementById("hudTimerToggleIcon");
-  const hudBadge = document.getElementById("hudTimerBadge");
+
+  const stickyLabel = document.getElementById("stickyTimerLabel");
+  const stickyClock = document.getElementById("stickyTimerClock");
+  const stickyIcon = document.getElementById("stickyTimerActionIcon");
+  const stickyChip = document.getElementById("stickyTimerChip");
+  const stickySubBtn = document.getElementById("stickySubmitBtn");
+
+  const sidebarClock = document.getElementById("sidebarTimerClock");
+  const sidebarLabel = document.getElementById("sidebarTimerLabel");
+  const sidebarSub = document.getElementById("sidebarTimerSubText");
+  const sidebarSubBtn = document.getElementById("sidebarSubmitBtn");
 
   clearInterval(examTimerInterval);
   clearInterval(practiceTimerInterval);
@@ -673,6 +715,9 @@ function handleModeChange() {
       startBtn.innerHTML = '<i class="ti-control-play"></i> Bắt Đầu Thi Thử (45 Phút)';
     }
     if (submitBtn) submitBtn.style.display = "none";
+    if (stickySubBtn) stickySubBtn.style.display = "none";
+    if (sidebarSubBtn) sidebarSubBtn.style.display = "none";
+
     if (examTimerBadge) {
       examTimerBadge.style.display = "inline-flex";
       examTimerBadge.classList.remove("urgent");
@@ -680,10 +725,17 @@ function handleModeChange() {
     }
     if (progressBanner) progressBanner.style.display = "none";
 
-    if (hudLabel) hudLabel.innerText = "Còn lại:";
-    if (hudTimerVal) hudTimerVal.innerText = "45:00";
-    if (hudIcon) hudIcon.style.display = "none";
-    if (hudBadge) hudBadge.classList.remove("paused", "urgent");
+    if (stickyLabel) stickyLabel.innerText = "Còn lại:";
+    if (stickyClock) stickyClock.innerText = "45:00";
+    if (stickyIcon) stickyIcon.style.display = "none";
+    if (stickyChip) stickyChip.classList.remove("paused", "urgent");
+
+    if (sidebarLabel) sidebarLabel.innerText = "Thời Gian Còn Lại";
+    if (sidebarClock) {
+      sidebarClock.innerText = "45:00";
+      sidebarClock.classList.remove("urgent");
+    }
+    if (sidebarSub) sidebarSub.innerHTML = '<i class="ti-timer"></i> Đếm ngược 45 phút';
 
     document.getElementById("questionContainer").innerHTML = `
       <div style="text-align: center; padding: 48px 20px;">
@@ -702,12 +754,18 @@ function handleModeChange() {
     if (practiceTimerBadge) practiceTimerBadge.style.display = "inline-flex";
     if (startBtn) startBtn.style.display = "none";
     if (submitBtn) submitBtn.style.display = "none";
+    if (stickySubBtn) stickySubBtn.style.display = "none";
+    if (sidebarSubBtn) sidebarSubBtn.style.display = "none";
     if (examTimerBadge) examTimerBadge.style.display = "none";
     if (progressBanner) progressBanner.style.display = "flex";
 
-    if (hudLabel) hudLabel.innerText = "Thời gian:";
-    if (hudIcon) hudIcon.style.display = "inline-block";
-    if (hudBadge) hudBadge.classList.remove("paused", "urgent");
+    if (stickyLabel) stickyLabel.innerText = "Thời gian:";
+    if (stickyIcon) stickyIcon.style.display = "inline-block";
+    if (stickyChip) stickyChip.classList.remove("paused", "urgent");
+
+    if (sidebarLabel) sidebarLabel.innerText = "Thời Gian Làm Bài";
+    if (sidebarClock) sidebarClock.classList.remove("urgent");
+    if (sidebarSub) sidebarSub.innerHTML = '<i id="sidebarTimerIcon" class="ti-control-pause"></i> Nhấp để tạm dừng';
 
     loadQuestions();
     startPracticeTimer();
@@ -728,28 +786,88 @@ function loadQuestions() {
   updateProgressTracker();
 }
 
+function renderSidebarQuestionGrid() {
+  const grid = document.getElementById("sidebarQuestionGrid");
+  if (!grid) return;
+
+  let html = "";
+  currentQuestions.forEach((q, idx) => {
+    const num = idx + 1;
+    const isAnswered = userAnswers[q.id] !== undefined;
+    html += `
+      <div class="side-q-cell ${isAnswered ? 'answered' : ''}" 
+           id="side-cell-${q.id}" 
+           onclick="jumpToQuestion(${q.id})"
+           title="Câu ${num}: ${isAnswered ? 'Đã trả lời' : 'Chưa làm'}">
+        ${num}
+      </div>
+    `;
+  });
+  grid.innerHTML = html;
+}
+
 function updateProgressTracker() {
   const mode = document.getElementById("quizModeSelect").value;
   const progressBanner = document.getElementById("quizProgressBanner");
-  if (!progressBanner) return;
-
-  if (mode === "exam" && !document.getElementById("startExamBtn").style.display.includes("none")) {
-    progressBanner.style.display = "none";
-    return;
+  if (progressBanner) {
+    if (mode === "exam" && !document.getElementById("startExamBtn").style.display.includes("none")) {
+      progressBanner.style.display = "none";
+    } else {
+      progressBanner.style.display = "flex";
+    }
   }
-  progressBanner.style.display = "flex";
 
   const total = currentQuestions.length;
   const answeredCount = Object.keys(userAnswers).length;
+  const unansweredCount = total - answeredCount;
   const percent = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
 
+  // Toolbar banner (if exists)
   const countEl = document.getElementById("progressCountText");
   const fillEl = document.getElementById("progressTrackFill");
   if (countEl) countEl.innerText = `Đã trả lời: ${answeredCount} / ${total} câu (${percent}%)`;
   if (fillEl) fillEl.style.width = `${percent}%`;
 
-  const hudProgress = document.getElementById("hudProgressText");
-  if (hudProgress) hudProgress.innerText = `${answeredCount} / ${total} câu (${percent}%)`;
+  // Sticky top bar (Mobile & Tablet)
+  const stickyAns = document.getElementById("stickyAnsweredText");
+  if (stickyAns) stickyAns.innerText = `${answeredCount}/${total}`;
+
+  const stickyFill = document.getElementById("stickyProgressFill");
+  if (stickyFill) stickyFill.style.width = `${percent}%`;
+
+  const stickyUnans = document.getElementById("stickyUnansweredTag");
+  if (stickyUnans) {
+    if (unansweredCount === 0) {
+      stickyUnans.innerText = "Đã làm hết!";
+      stickyUnans.style.background = "var(--success-bg)";
+      stickyUnans.style.color = "var(--success)";
+    } else {
+      stickyUnans.innerText = `Còn ${unansweredCount} câu`;
+      stickyUnans.style.background = "rgba(119, 136, 115, 0.12)";
+      stickyUnans.style.color = "var(--brand-primary)";
+    }
+  }
+
+  // Desktop sidebar
+  const sideFraction = document.getElementById("sidebarProgressFraction");
+  if (sideFraction) sideFraction.innerText = `${answeredCount} / ${total} câu (${percent}%)`;
+
+  const sideFill = document.getElementById("sidebarProgressFill");
+  if (sideFill) sideFill.style.width = `${percent}%`;
+
+  const sideUnans = document.getElementById("sidebarUnansweredTag");
+  if (sideUnans) {
+    if (unansweredCount === 0) {
+      sideUnans.innerHTML = '<i class="ti-check" style="color: var(--success);"></i> <strong>Đã làm đủ 40 câu!</strong>';
+      sideUnans.style.color = "var(--success)";
+    } else {
+      sideUnans.innerHTML = `<i class="ti-alert"></i> Còn <strong>${unansweredCount} câu</strong> chưa làm`;
+      sideUnans.style.color = "#B87C2B";
+    }
+  }
+
+  renderSidebarQuestionGrid();
+  renderJumpDrawerGrid();
 }
 
 function renderQuestions() {
@@ -859,6 +977,13 @@ function selectOption(qId, optIdx) {
 function startExam() {
   document.getElementById("startExamBtn").style.display = "none";
   document.getElementById("submitExamBtn").style.display = "inline-flex";
+
+  const stickySubBtn = document.getElementById("stickySubmitBtn");
+  if (stickySubBtn) stickySubBtn.style.display = "inline-flex";
+
+  const sidebarSubBtn = document.getElementById("sidebarSubmitBtn");
+  if (sidebarSubBtn) sidebarSubBtn.style.display = "inline-flex";
+
   document.getElementById("examResult").style.display = "none";
   userAnswers = {};
   isExamSubmitted = false;
@@ -870,17 +995,25 @@ function startExam() {
   timeLeftSeconds = 45 * 60;
   clearInterval(examTimerInterval);
   const timerBadge = document.getElementById("examTimer");
-  timerBadge.style.display = "inline-flex";
-  timerBadge.classList.remove("urgent");
+  if (timerBadge) {
+    timerBadge.style.display = "inline-flex";
+    timerBadge.classList.remove("urgent");
+  }
 
-  const hudLabel = document.getElementById("hudTimerLabel");
-  if (hudLabel) hudLabel.innerText = "Còn lại:";
-  const hudBadge = document.getElementById("hudTimerBadge");
-  if (hudBadge) hudBadge.classList.remove("paused", "urgent");
-  const hudIcon = document.getElementById("hudTimerToggleIcon");
-  if (hudIcon) hudIcon.style.display = "none";
-  const hudTimerVal = document.getElementById("hudTimerDisplay");
-  if (hudTimerVal) hudTimerVal.innerText = "45:00";
+  const stickyLabel = document.getElementById("stickyTimerLabel");
+  if (stickyLabel) stickyLabel.innerText = "Còn lại:";
+  const stickyChip = document.getElementById("stickyTimerChip");
+  if (stickyChip) stickyChip.classList.remove("paused", "urgent");
+  const stickyIcon = document.getElementById("stickyTimerActionIcon");
+  if (stickyIcon) stickyIcon.style.display = "none";
+  const stickyClock = document.getElementById("stickyTimerClock");
+  if (stickyClock) stickyClock.innerText = "45:00";
+
+  const sidebarClock = document.getElementById("sidebarTimerClock");
+  if (sidebarClock) {
+    sidebarClock.innerText = "45:00";
+    sidebarClock.classList.remove("urgent");
+  }
 
   examTimerInterval = setInterval(() => {
     timeLeftSeconds--;
@@ -891,41 +1024,64 @@ function startExam() {
     const timerDisplay = document.getElementById("timerDisplay");
     if (timerDisplay) timerDisplay.innerText = displayStr;
 
-    if (hudTimerVal) hudTimerVal.innerText = displayStr;
+    if (stickyClock) stickyClock.innerText = displayStr;
+    if (sidebarClock) sidebarClock.innerText = displayStr;
 
     if (timeLeftSeconds <= 300) {
-      timerBadge.classList.add("urgent");
-      if (hudBadge) hudBadge.classList.add("urgent");
+      if (timerBadge) timerBadge.classList.add("urgent");
+      if (stickyChip) stickyChip.classList.add("urgent");
+      if (sidebarClock) sidebarClock.classList.add("urgent");
     }
 
     if (timeLeftSeconds <= 0) {
       clearInterval(examTimerInterval);
-      alert("Đã hết 45 phút làm bài! Hệ thống tự động thu và chấm bài thi của bạn.");
-      submitExam();
+      showAlertModal({
+        title: "Hết Giờ Làm Bài",
+        message: "Đã hết 45 phút làm bài! Hệ thống tự động thu và chấm bài thi của bạn ngay bây giờ.",
+        buttonText: "Xem Kết Quả",
+        type: "info",
+        icon: "ti-timer"
+      }).then(() => {
+        submitExam();
+      });
     }
   }, 1000);
 
   showToast("Bài thi 45 phút đã bắt đầu! Chúc bạn làm bài thật tốt.", "ti-timer");
 }
 
-function submitExam() {
+async function submitExam() {
   if (isExamSubmitted) return;
 
   const answeredCount = Object.keys(userAnswers).length;
   if (answeredCount < currentQuestions.length) {
     const unanswered = currentQuestions.length - answeredCount;
-    if (!confirm(`Bạn còn ${unanswered} câu chưa trả lời. Bạn có chắc chắn muốn nộp bài ngay không?`)) {
-      return;
-    }
+    const confirmed = await showConfirmModal({
+      title: "Chưa Hoàn Thành Bài Thi",
+      message: `Bạn vẫn còn <strong>${unanswered} câu</strong> chưa chọn đáp án. Bạn có chắc chắn muốn nộp bài ngay bây giờ không?`,
+      confirmText: "Vẫn Nộp Bài",
+      cancelText: "Tiếp Tục Làm",
+      type: "warning",
+      icon: "ti-alert"
+    });
+    if (!confirmed) return;
   }
 
   clearInterval(examTimerInterval);
   isExamSubmitted = true;
 
-  document.getElementById("submitExamBtn").style.display = "none";
+  const submitBtn = document.getElementById("submitExamBtn");
+  if (submitBtn) submitBtn.style.display = "none";
+  const stickySubBtn = document.getElementById("stickySubmitBtn");
+  if (stickySubBtn) stickySubBtn.style.display = "none";
+  const sidebarSubBtn = document.getElementById("sidebarSubmitBtn");
+  if (sidebarSubBtn) sidebarSubBtn.style.display = "none";
+
   const startBtn = document.getElementById("startExamBtn");
-  startBtn.style.display = "inline-flex";
-  startBtn.innerHTML = '<i class="ti-reload"></i> Thi Lại Đề Khác';
+  if (startBtn) {
+    startBtn.style.display = "inline-flex";
+    startBtn.innerHTML = '<i class="ti-reload"></i> Thi Lại Đề Khác';
+  }
 
   let correctCount = 0;
   let modStats = {
@@ -1033,7 +1189,10 @@ function renderJumpDrawerGrid() {
 }
 
 function jumpToQuestion(qId) {
-  toggleJumpDrawer();
+  const modal = document.getElementById("jumpModal");
+  if (modal && modal.style.display === "flex") {
+    modal.style.display = "none";
+  }
   const el = document.getElementById(`q-card-${qId}`);
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1282,8 +1441,124 @@ function renderHistory() {
   container.innerHTML = html;
 }
 
-function clearHistory() {
-  if (confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử các lần thi thử không?")) {
+// --- 10.5 CUSTOM MODERN CONFIRM & ALERT MODAL HELPERS ---
+function showConfirmModal({
+  title = "Xác nhận",
+  message = "",
+  confirmText = "Đồng Ý",
+  cancelText = "Hủy Bỏ",
+  type = "warning",
+  icon = "ti-alert"
+}) {
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById("customDialogBackdrop");
+    const iconWrapper = document.getElementById("customDialogIconWrapper");
+    const iconEl = document.getElementById("customDialogIcon");
+    const titleEl = document.getElementById("customDialogTitle");
+    const msgEl = document.getElementById("customDialogMessage");
+    const confirmBtn = document.getElementById("customDialogConfirmBtn");
+    const cancelBtn = document.getElementById("customDialogCancelBtn");
+
+    if (!backdrop || !confirmBtn || !cancelBtn) {
+      resolve(confirm(message));
+      return;
+    }
+
+    titleEl.innerText = title;
+    msgEl.innerHTML = message;
+    confirmBtn.innerText = confirmText;
+    cancelBtn.innerText = cancelText;
+    cancelBtn.style.display = "inline-flex";
+
+    iconWrapper.className = `custom-dialog-icon-wrapper ${type}`;
+    iconEl.className = icon;
+    confirmBtn.className = `btn btn-${type === 'danger' ? 'danger' : (type === 'success' ? 'success' : 'primary')}`;
+
+    function cleanUp() {
+      backdrop.classList.remove("active");
+      setTimeout(() => { backdrop.style.display = "none"; }, 220);
+      confirmBtn.removeEventListener("click", onConfirm);
+      cancelBtn.removeEventListener("click", onCancel);
+    }
+
+    function onConfirm() {
+      cleanUp();
+      resolve(true);
+    }
+
+    function onCancel() {
+      cleanUp();
+      resolve(false);
+    }
+
+    confirmBtn.addEventListener("click", onConfirm);
+    cancelBtn.addEventListener("click", onCancel);
+
+    backdrop.style.display = "flex";
+    requestAnimationFrame(() => {
+      backdrop.classList.add("active");
+    });
+  });
+}
+
+function showAlertModal({
+  title = "Thông báo",
+  message = "",
+  buttonText = "Đã Hiểu",
+  type = "info",
+  icon = "ti-info-alt"
+}) {
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById("customDialogBackdrop");
+    const iconWrapper = document.getElementById("customDialogIconWrapper");
+    const iconEl = document.getElementById("customDialogIcon");
+    const titleEl = document.getElementById("customDialogTitle");
+    const msgEl = document.getElementById("customDialogMessage");
+    const confirmBtn = document.getElementById("customDialogConfirmBtn");
+    const cancelBtn = document.getElementById("customDialogCancelBtn");
+
+    if (!backdrop || !confirmBtn) {
+      alert(message);
+      resolve();
+      return;
+    }
+
+    titleEl.innerText = title;
+    msgEl.innerHTML = message;
+    confirmBtn.innerText = buttonText;
+    confirmBtn.className = "btn btn-primary";
+    if (cancelBtn) cancelBtn.style.display = "none";
+
+    iconWrapper.className = `custom-dialog-icon-wrapper ${type}`;
+    iconEl.className = icon;
+
+    function onConfirm() {
+      backdrop.classList.remove("active");
+      setTimeout(() => { backdrop.style.display = "none"; }, 220);
+      confirmBtn.removeEventListener("click", onConfirm);
+      resolve();
+    }
+
+    confirmBtn.addEventListener("click", onConfirm);
+
+    backdrop.style.display = "flex";
+    requestAnimationFrame(() => {
+      backdrop.classList.add("active");
+    });
+  });
+}
+
+async function clearHistory() {
+  const confirmed = await showConfirmModal({
+    title: "Xóa Toàn Bộ Lịch Sử?",
+    message: "Bạn có chắc chắn muốn xóa toàn bộ lịch sử các lần thi thử không? Toàn bộ dữ liệu điểm số và thống kê sẽ bị xóa vĩnh viễn.",
+    confirmText: "Xác Nhận Xóa",
+    cancelText: "Hủy Bỏ",
+    type: "danger",
+    icon: "ti-trash"
+  });
+
+  if (confirmed) {
     localStorage.removeItem("vinuni_exam_history");
     renderHistory();
     showToast("Đã xóa sạch lịch sử làm bài!", "ti-trash");
@@ -1353,7 +1628,26 @@ function triggerConfetti() {
 // --- 12. INITIALIZATION ON DOM READY ---
 window.addEventListener("DOMContentLoaded", () => {
   initTheme();
+  updateSoundButtonUI(soundEnabled);
   loadQuestions();
   renderFlashcard();
   startPracticeTimer();
 });
+
+// --- 13. BACK TO TOP CONTROLLER ---
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+window.addEventListener("scroll", () => {
+  const btn = document.getElementById("backToTopBtn");
+  if (!btn) return;
+  if (window.scrollY > 280) {
+    btn.classList.add("visible");
+  } else {
+    btn.classList.remove("visible");
+  }
+}, { passive: true });

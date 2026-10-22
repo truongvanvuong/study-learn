@@ -40,12 +40,13 @@
       </div>
 
       <div class="header-controls">
-        <button class="btn-icon" id="soundToggle"
-          onclick="soundEnabled = !soundEnabled; showToast(soundEnabled ? 'Đã bật âm thanh phản hồi' : 'Đã tắt âm thanh', 'ti-volume'); this.innerHTML = soundEnabled ? '<i class=\'ti-volume\'></i> Âm thanh' : '<i class=\'ti-volume\'></i> Tắt tiếng';">
-          <i class="ti-volume"></i> Âm thanh
+        <button class="btn-icon" id="soundToggle" onclick="toggleSound()" title="Bật/Tắt âm thanh phản hồi">
+          <i class="ti-volume"></i>
+          <span class="btn-label">Âm thanh</span>
         </button>
-        <button class="btn-icon" id="themeToggle" onclick="toggleTheme()">
-          <i class="ti-shine"></i> Tối
+        <button class="btn-icon" id="themeToggle" onclick="toggleTheme()" title="Chuyển đổi giao diện sáng/tối">
+          <i class="ti-shine"></i>
+          <span class="btn-label">Tối</span>
         </button>
       </div>
     </div>
@@ -81,6 +82,42 @@
 
     <!-- TAB 1: QUIZ / EXAM SIMULATOR -->
     <section id="quiz-tab" class="tab-pane active" aria-labelledby="tab-quiz">
+
+      <!-- STICKY TOP STATUS BAR (Ghim trên đỉnh khi cuộn làm bài - Mobile & Tablet) -->
+      <div id="stickyQuizBar" class="sticky-quiz-bar">
+        <div class="sticky-bar-left">
+          <div id="stickyTimerChip" class="sticky-timer-chip" onclick="handleTimerClick()"
+            title="Nhấp để Tạm dừng / Tiếp tục đếm giờ">
+            <i class="ti-timer"></i>
+            <span class="sticky-timer-label" id="stickyTimerLabel">Thời gian:</span>
+            <strong class="sticky-timer-val" id="stickyTimerClock">00:00</strong>
+            <i id="stickyTimerActionIcon" class="ti-control-pause"></i>
+          </div>
+        </div>
+
+        <div class="sticky-bar-center">
+          <div class="sticky-progress-info">
+            <span><i class="ti-stats-up"></i> <strong id="stickyAnsweredText">0/40</strong> câu</span>
+            <span class="sticky-unanswered-badge" id="stickyUnansweredTag">Còn 40 câu</span>
+          </div>
+          <div class="sticky-progress-line">
+            <div id="stickyProgressFill" class="sticky-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="sticky-bar-right">
+          <button class="sticky-drawer-btn" onclick="toggleJumpDrawer()" title="Xem bảng 40 câu hỏi & câu chưa làm">
+            <i class="ti-layout-grid3"></i>
+            <span class="sticky-btn-text">Bảng câu</span>
+          </button>
+          <button class="btn btn-danger sticky-submit-btn" id="stickySubmitBtn" style="display: none;"
+            onclick="submitExam()" title="Nộp bài thi ngay">
+            <i class="ti-check"></i>
+            <span>Nộp bài</span>
+          </button>
+        </div>
+      </div>
+
       <div class="ui-card">
 
         <!-- Controls Toolbar -->
@@ -89,7 +126,7 @@
             <div class="control-field">
               <label for="quizModeSelect">Chế độ:</label>
               <select id="quizModeSelect" class="select-control" onchange="handleModeChange()">
-                <option value="practice">Ôn tập tự do (Xem đáp án & giải thích tức thì)</option>
+                <option value="practice">Ôn tập tự do (Xem đáp án & giải thích)</option>
                 <option value="exam">Thi thử tính giờ (40 câu ngẫu nhiên - 45 phút)</option>
               </select>
             </div>
@@ -107,53 +144,18 @@
           </div>
 
           <div class="toolbar-controls-right">
-            <!-- Practice Mode Stopwatch -->
-            <div id="practiceTimer" class="exam-timer-chip practice-timer" onclick="togglePracticeTimer()" title="Nhấp để Tạm dừng / Tiếp tục đếm giờ làm bài">
-              <i class="ti-timer"></i>
-              <span>Thời gian làm bài:</span>
-              <strong id="practiceTimerDisplay">00:00</strong>
-              <i id="practiceTimerIcon" class="ti-control-pause" style="font-size: 11px; opacity: 0.75; margin-left: 2px;"></i>
-            </div>
-
-            <!-- Exam Mode Countdown Timer -->
-            <div id="examTimer" class="exam-timer-chip" style="display: none;">
-              <i class="ti-timer"></i>
-              <span>Còn lại:</span>
-              <strong id="timerDisplay">45:00</strong>
-            </div>
-
             <button class="btn btn-success" id="startExamBtn" style="display: none;" onclick="startExam()">
               <i class="ti-control-play"></i> Bắt Đầu Thi Thử
             </button>
-            <button class="btn btn-danger" id="submitExamBtn" style="display: none;" onclick="submitExam()">
-              <i class="ti-check"></i> Nộp Bài Thi
-            </button>
-            <button class="btn btn-outline" id="resetBtn" onclick="resetQuiz()">
-              <i class="ti-reload"></i> Làm Lại
-            </button>
           </div>
-        </div>
-
-        <!-- Realtime Progress Tracker & Quick Jumper -->
-        <div class="quiz-progress-banner" id="quizProgressBanner">
-          <div class="progress-info">
-            <i class="ti-stats-up" style="color: var(--brand-primary); font-size: 16px;"></i>
-            <span>Tiến độ hoàn thành:</span>
-            <span id="progressCountText">Đã trả lời: 0 / 40 câu (0%)</span>
-          </div>
-          <div class="progress-track-wrapper">
-            <div class="progress-track-fill" id="progressTrackFill"></div>
-          </div>
-          <button class="quick-jump-trigger" onclick="toggleJumpDrawer()">
-            <i class="ti-layout-grid3"></i> Danh sách câu hỏi
-          </button>
         </div>
 
         <!-- Exam Result Hero Banner -->
         <div id="examResult" class="score-banner" style="display: none;">
           <h2 class="score-heading">BÁO CÁO KẾT QUẢ BÀI THI THỬ</h2>
           <p class="score-summary-text" id="scoreSummary">Đang tính toán kết quả...</p>
-          <div id="examTimeTakenText" style="font-size: 14.5px; font-weight: 700; color: var(--brand-primary); margin: -10px auto 16px;"></div>
+          <div id="examTimeTakenText"
+            style="font-size: 14.5px; font-weight: 700; color: var(--brand-primary); margin: -10px auto 16px;"></div>
 
           <div class="score-circle-wrapper">
             <svg class="score-circle-svg" viewBox="0 0 160 160">
@@ -183,28 +185,66 @@
           </div>
         </div>
 
-        <!-- Questions Rendering Container -->
-        <div id="questionContainer"></div>
+        <!-- Two Column Layout: Questions Stream + Sticky Side Panel -->
+        <div class="quiz-columns-container">
+          <div class="quiz-questions-stream">
+            <!-- Questions Rendering Container -->
+            <div id="questionContainer"></div>
+          </div>
 
-      </div>
+          <!-- Desktop Sticky Side Panel (Trợ lý thi & Điều hướng 40 câu) -->
+          <aside class="quiz-desktop-sidebar" id="quizDesktopSidebar">
+            <div class="desktop-sidebar-inner">
+              <div class="sidebar-timer-box">
+                <div class="sidebar-timer-label">
+                  <i class="ti-timer"></i>
+                  <span id="sidebarTimerLabel">Thời Gian Làm Bài</span>
+                </div>
+                <div class="sidebar-timer-value" id="sidebarTimerClock" onclick="handleTimerClick()"
+                  title="Nhấp để Tạm dừng / Tiếp tục">
+                  00:00
+                </div>
+                <div class="sidebar-timer-sub" id="sidebarTimerSubText">
+                  <i id="sidebarTimerIcon" class="ti-control-pause"></i> Nhấp để tạm dừng
+                </div>
+              </div>
 
-      <!-- Floating Quiz Timer & Quick HUD (Ghim hiển thị khi làm bài) -->
-      <div id="floatingQuizHud" class="floating-quiz-hud">
-        <div class="hud-timer-badge" id="hudTimerBadge" onclick="handleHudTimerClick()" title="Nhấp để Tạm dừng / Tiếp tục đếm giờ làm bài">
-          <i class="ti-timer"></i>
-          <span class="hud-label" id="hudTimerLabel">Thời gian:</span>
-          <strong class="hud-time-val" id="hudTimerDisplay">00:00</strong>
-          <i id="hudTimerToggleIcon" class="ti-control-pause" style="font-size: 11px; opacity: 0.8; margin-left: 2px;"></i>
+              <div class="sidebar-progress-box">
+                <div class="sidebar-progress-header">
+                  <span>Tiến độ bài thi:</span>
+                  <strong id="sidebarProgressFraction">0 / 40 câu</strong>
+                </div>
+                <div class="sidebar-progress-bar">
+                  <div class="sidebar-progress-fill" id="sidebarProgressFill" style="width: 0%;"></div>
+                </div>
+                <div class="sidebar-unanswered-tag" id="sidebarUnansweredTag">
+                  <i class="ti-alert"></i> Còn <strong>40 câu</strong> chưa làm
+                </div>
+              </div>
+
+              <div class="sidebar-grid-box">
+                <div class="sidebar-grid-title">
+                  <span>Lưới 40 Câu Hỏi:</span>
+                  <span class="legend-note"><span class="legend-dot done"></span> Đã làm</span>
+                </div>
+                <div class="sidebar-question-grid" id="sidebarQuestionGrid">
+                  <!-- 40 clickable nodes -->
+                </div>
+              </div>
+
+              <div class="sidebar-actions-box">
+                <button class="btn btn-danger btn-block" id="sidebarSubmitBtn" style="display: none;"
+                  onclick="submitExam()">
+                  <i class="ti-check"></i> Nộp Bài Thi Ngay
+                </button>
+                <button class="btn btn-outline btn-block" id="sidebarResetBtn" onclick="resetQuiz()">
+                  <i class="ti-reload"></i> Làm Lại Đề Này
+                </button>
+              </div>
+            </div>
+          </aside>
         </div>
-        <div class="hud-divider"></div>
-        <div class="hud-progress-info">
-          <i class="ti-stats-up" style="color: var(--brand-primary); font-size: 13px;"></i>
-          <span id="hudProgressText">0 / 40 câu</span>
-        </div>
-        <button class="hud-action-btn" onclick="toggleJumpDrawer()" title="Xem bảng 40 câu hỏi">
-          <i class="ti-layout-grid3"></i>
-          <span class="hud-btn-text">Bảng câu</span>
-        </button>
+
       </div>
     </section>
 
@@ -293,10 +333,12 @@
           </div>
 
           <div class="keyboard-hint">
-            <span>Phím tắt:</span>
-            <span class="kbd-key">Space</span> lật thẻ &bull;
-            <span class="kbd-key">&larr;</span> thẻ trước &bull;
-            <span class="kbd-key">&rarr;</span> thẻ tiếp theo
+            <span class="hint-label">Phím tắt:</span>
+            <span class="hint-item"><span class="kbd-key">Space</span> lật thẻ</span>
+            <span class="hint-sep">&bull;</span>
+            <span class="hint-item"><span class="kbd-key">&larr;</span> thẻ trước</span>
+            <span class="hint-sep">&bull;</span>
+            <span class="hint-item"><span class="kbd-key">&rarr;</span> thẻ kế tiếp</span>
           </div>
 
         </div>
@@ -355,26 +397,43 @@
   </main>
 
   <!-- QUICK QUESTION JUMP MODAL -->
-  <div id="jumpModal"
-    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div
-      style="background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); padding: 24px; width: 90%; max-width: 520px; box-shadow: var(--shadow-lg);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3
-          style="font-size: 18px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-          <i class="ti-layout-grid3" style="color: var(--brand-primary);"></i>
-          <span>Chọn Câu Hỏi Cần Nhảy Tới</span>
+  <div id="jumpModal" class="drawer-modal-backdrop" style="display: none;" onclick="if(event.target===this) toggleJumpDrawer()">
+    <div class="drawer-modal-card">
+      <div class="drawer-modal-header">
+        <h3 class="drawer-modal-title">
+          <i class="ti-layout-grid3"></i>
+          <span>Bảng Lưới 40 Câu Hỏi</span>
         </h3>
-        <button style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-secondary);"
-          onclick="toggleJumpDrawer()">
+        <button class="drawer-modal-close" onclick="toggleJumpDrawer()" title="Đóng bảng câu">
           <i class="ti-close"></i>
         </button>
       </div>
-      <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 14px;">Các ô màu có viền xanh là câu bạn
-        đã chọn đáp án.</p>
+      <p class="drawer-modal-sub">Ô màu xanh là câu đã chọn đáp án. Bấm vào ô bất kỳ để nhảy thẳng tới câu hỏi đó.</p>
       <div class="jump-grid" id="jumpGrid"></div>
     </div>
   </div>
+
+  <!-- CUSTOM MODERN CONFIRM / ALERT MODAL -->
+  <div id="customDialogBackdrop" class="custom-dialog-backdrop" role="dialog" aria-modal="true" style="display: none;">
+    <div class="custom-dialog-box">
+      <div class="custom-dialog-icon-wrapper warning" id="customDialogIconWrapper">
+        <i id="customDialogIcon" class="ti-alert"></i>
+      </div>
+      <h3 class="custom-dialog-title" id="customDialogTitle">Xác nhận</h3>
+      <div class="custom-dialog-message" id="customDialogMessage">Nội dung thông báo</div>
+      <div class="custom-dialog-actions" id="customDialogActions">
+        <button class="btn btn-outline" id="customDialogCancelBtn">Hủy Bỏ</button>
+        <button class="btn btn-danger" id="customDialogConfirmBtn">Đồng Ý</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACK TO TOP FLOATING BUTTON -->
+  <button id="backToTopBtn" class="back-to-top-btn" onclick="scrollToTop()" title="Cuộn lên đầu trang"
+    aria-label="Cuộn lên đầu trang">
+    <i class="ti-arrow-up"></i>
+    <span class="back-to-top-text">Lên đầu</span>
+  </button>
 
   <!-- Modular JavaScript Logic -->
   <script src="app.js"></script>
