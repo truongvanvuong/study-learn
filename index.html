@@ -98,7 +98,6 @@
         <div class="sticky-bar-center">
           <div class="sticky-progress-info">
             <span><i class="ti-stats-up"></i> <strong id="stickyAnsweredText">0/60</strong> câu</span>
-            <span class="sticky-unanswered-badge" id="stickyUnansweredTag">Còn 60 câu</span>
           </div>
           <div class="sticky-progress-line">
             <div id="stickyProgressFill" class="sticky-progress-fill" style="width: 0%;"></div>
@@ -165,6 +164,41 @@
             <div class="score-number-inside" id="scorePercentInside">0%</div>
           </div>
 
+          <!-- 3-Way Metrics Breakdown (Đúng / Sai / Chưa Làm) -->
+          <div class="score-breakdown-row">
+            <div class="breakdown-chip correct">
+              <i class="ti-check"></i>
+              <span>Đúng: <strong id="examCorrectCount">0</strong> câu</span>
+            </div>
+            <div class="breakdown-chip wrong">
+              <i class="ti-close"></i>
+              <span>Sai: <strong id="examWrongCount">0</strong> câu</span>
+            </div>
+            <div class="breakdown-chip skipped">
+              <i class="ti-alert"></i>
+              <span>Chưa làm: <strong id="examSkippedCount">0</strong> câu</span>
+            </div>
+          </div>
+
+          <!-- Review Filter Toolbar -->
+          <div class="exam-review-toolbar">
+            <span class="review-toolbar-title"><i class="ti-filter"></i> Xem lại:</span>
+            <div class="review-filter-buttons">
+              <button class="review-btn active" data-filter="all" onclick="filterExamReview('all', this)">
+                Tất cả (<span id="filterCountAll">60</span>)
+              </button>
+              <button class="review-btn wrong" data-filter="wrong" onclick="filterExamReview('wrong', this)">
+                <i class="ti-close"></i> Câu sai (<span id="filterCountWrong">0</span>)
+              </button>
+              <button class="review-btn skipped" data-filter="skipped" onclick="filterExamReview('skipped', this)">
+                <i class="ti-alert"></i> Chưa làm (<span id="filterCountSkipped">0</span>)
+              </button>
+              <button class="review-btn correct" data-filter="correct" onclick="filterExamReview('correct', this)">
+                <i class="ti-check"></i> Câu đúng (<span id="filterCountCorrect">0</span>)
+              </button>
+            </div>
+          </div>
+
           <div class="score-stats-grid">
             <div class="stat-card">
               <div class="stat-val" id="statK1" style="color: var(--brand-primary);">0%</div>
@@ -217,15 +251,12 @@
                 <div class="sidebar-progress-bar">
                   <div class="sidebar-progress-fill" id="sidebarProgressFill" style="width: 0%;"></div>
                 </div>
-                <div class="sidebar-unanswered-tag" id="sidebarUnansweredTag">
-                  <i class="ti-alert"></i> Còn <strong>60 câu</strong> chưa làm
-                </div>
               </div>
 
               <div class="sidebar-grid-box">
                 <div class="sidebar-grid-title">
                   <span>Lưới Câu Hỏi Bài Thi:</span>
-                  <span class="legend-note"><span class="legend-dot done"></span> Đã làm</span>
+                  <span class="legend-note" id="sidebarGridLegend"><span class="legend-dot done"></span> Đã làm</span>
                 </div>
                 <div class="sidebar-question-grid" id="sidebarQuestionGrid">
                   <!-- Dynamic clickable nodes -->

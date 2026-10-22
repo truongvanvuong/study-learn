@@ -22,6 +22,15 @@ let isExamSubmitted = false;
 let examTimerInterval = null;
 let timeLeftSeconds = 90 * 60;
 let soundEnabled = true;
+let examReviewFilter = "all"; // 'all' | 'wrong' | 'skipped' | 'correct'
+
+function filterExamReview(filterType, btnEl) {
+  examReviewFilter = filterType;
+  document.querySelectorAll(".review-btn").forEach(b => {
+    b.classList.toggle("active", b === btnEl || b.getAttribute("data-filter") === filterType);
+  });
+  renderQuestions();
+}
 
 // Practice Mode Live Stopwatch State
 let practiceSeconds = 0;
@@ -286,6 +295,7 @@ function handleModeChange() {
   clearInterval(practiceTimerInterval);
   if (resultDiv) resultDiv.style.display = "none";
   isExamSubmitted = false;
+  examReviewFilter = "all";
   userAnswers = {};
 
   if (mode === "exam") {
@@ -367,6 +377,7 @@ function loadQuestions() {
   }
   userAnswers = {};
   isExamSubmitted = false;
+  examReviewFilter = "all";
   renderQuestions();
   updateProgressTracker();
 }
@@ -375,14 +386,28 @@ function renderSidebarQuestionGrid() {
   const grid = document.getElementById("sidebarQuestionGrid");
   if (!grid) return;
 
+  const total = currentQuestions.length;
+  let correctCount = 0;
+  let wrongCount = 0;
+  let skippedCount = 0;
+
+  currentQuestions.forEach(q => {
+    if (userAnswers[q.id] === undefined) {
+      skippedCount++;
+    } else if (userAnswers[q.id] === q.correctAnswer) {
+      correctCount++;
+    } else {
+      wrongCount++;
+    }
+  });
+
   const legendEl = document.getElementById("sidebarGridLegend");
   if (legendEl) {
     if (isExamSubmitted) {
-      legendEl.innerHTML = `
-        <span class="legend-dot correct"></span> Đúng
-        <span class="legend-dot wrong" style="margin-left: 6px;"></span> Sai
-      `;
+      legendEl.innerHTML = "";
+      legendEl.style.display = "none";
     } else {
+      legendEl.style.display = "inline-flex";
       legendEl.innerHTML = `<span class="legend-dot done"></span> Đã làm`;
     }
   }
@@ -404,7 +429,7 @@ function renderSidebarQuestionGrid() {
         titleStr = `Câu ${num}: Đúng ✓`;
       } else {
         statusClass = "wrong";
-        titleStr = `Câu ${num}: Sai ✗ (Bấm để xem giải thích)`;
+        titleStr = `Câu ${num}: Sai ✗ (Bạn chọn: ${markers[userAnswers[q.id]]}, Đáp án: ${markers[q.correctAnswer]})`;
       }
     } else {
       statusClass = isAnswered ? "answered" : "";
@@ -448,77 +473,35 @@ function updateProgressTracker() {
   // Sticky top bar (Mobile & Tablet)
   const stickyAns = document.getElementById("stickyAnsweredText");
   const stickyFill = document.getElementById("stickyProgressFill");
-  const stickyUnans = document.getElementById("stickyUnansweredTag");
 
   // Desktop sidebar
   const sideFraction = document.getElementById("sidebarProgressFraction");
   const sideFill = document.getElementById("sidebarProgressFill");
-  const sideUnans = document.getElementById("sidebarUnansweredTag");
 
   if (isExamSubmitted) {
     let correctCount = 0;
     currentQuestions.forEach(q => {
       if (userAnswers[q.id] === q.correctAnswer) correctCount++;
     });
-    const wrongCount = total - correctCount;
+
     const scorePct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
     if (stickyAns) stickyAns.innerText = `${correctCount}/${total} đúng`;
     if (stickyFill) stickyFill.style.width = `${scorePct}%`;
-    if (stickyUnans) {
-      if (wrongCount === 0) {
-        stickyUnans.innerText = "Tuyệt đối 100%!";
-        stickyUnans.style.background = "var(--success-bg)";
-        stickyUnans.style.color = "var(--success)";
-      } else {
-        stickyUnans.innerText = `Sai ${wrongCount} câu`;
-        stickyUnans.style.background = "var(--danger-bg)";
-        stickyUnans.style.color = "var(--danger)";
-      }
-    }
 
     if (sideFraction) sideFraction.innerText = `${correctCount} / ${total} câu đúng (${scorePct}%)`;
     if (sideFill) {
       sideFill.style.width = `${scorePct}%`;
       sideFill.style.background = scorePct >= 80 ? 'var(--success)' : (scorePct >= 50 ? 'var(--warning)' : 'var(--danger)');
     }
-    if (sideUnans) {
-      if (wrongCount === 0) {
-        sideUnans.innerHTML = `<i class="ti-check" style="color: var(--success);"></i> <strong>Xuất sắc! Đúng toàn bộ ${total} câu</strong>`;
-        sideUnans.style.color = "var(--success)";
-      } else {
-        sideUnans.innerHTML = `<i class="ti-close" style="color: var(--danger);"></i> Sai <strong>${wrongCount} câu</strong> (Xem ô đỏ bên dưới)`;
-        sideUnans.style.color = "var(--danger)";
-      }
-    }
   } else {
     if (stickyAns) stickyAns.innerText = `${answeredCount}/${total}`;
     if (stickyFill) stickyFill.style.width = `${percent}%`;
-    if (stickyUnans) {
-      if (unansweredCount === 0) {
-        stickyUnans.innerText = "Đã làm hết!";
-        stickyUnans.style.background = "var(--success-bg)";
-        stickyUnans.style.color = "var(--success)";
-      } else {
-        stickyUnans.innerText = `Còn ${unansweredCount} câu`;
-        stickyUnans.style.background = "rgba(119, 136, 115, 0.12)";
-        stickyUnans.style.color = "var(--brand-primary)";
-      }
-    }
 
     if (sideFraction) sideFraction.innerText = `${answeredCount} / ${total} câu (${percent}%)`;
     if (sideFill) {
       sideFill.style.width = `${percent}%`;
       sideFill.style.background = "var(--brand-primary)";
-    }
-    if (sideUnans) {
-      if (unansweredCount === 0) {
-        sideUnans.innerHTML = `<i class="ti-check" style="color: var(--success);"></i> <strong>Đã làm đủ ${total} câu!</strong>`;
-        sideUnans.style.color = "var(--success)";
-      } else {
-        sideUnans.innerHTML = `<i class="ti-alert"></i> Còn <strong>${unansweredCount} câu</strong> chưa làm`;
-        sideUnans.style.color = "#B87C2B";
-      }
     }
   }
 
@@ -535,12 +518,54 @@ function renderQuestions() {
     return;
   }
 
+  let questionsToRender = currentQuestions;
+  if (isExamSubmitted && examReviewFilter !== "all") {
+    if (examReviewFilter === "wrong") {
+      questionsToRender = currentQuestions.filter(q => userAnswers[q.id] !== undefined && userAnswers[q.id] !== q.correctAnswer);
+    } else if (examReviewFilter === "skipped") {
+      questionsToRender = currentQuestions.filter(q => userAnswers[q.id] === undefined);
+    } else if (examReviewFilter === "correct") {
+      questionsToRender = currentQuestions.filter(q => userAnswers[q.id] === q.correctAnswer);
+    }
+  }
+
+  if (questionsToRender.length === 0) {
+    if (isExamSubmitted && examReviewFilter === "wrong") {
+      container.innerHTML = `
+        <div class="empty-filter-state">
+          <i class="ti-medall" style="font-size: 42px; color: var(--success); margin-bottom: 12px; display: inline-block;"></i>
+          <h3>Tuyệt vời! Không có câu nào trả lời sai.</h3>
+          <p>Bạn không có lựa chọn sai nào trong bài thi này.</p>
+          <button class="btn btn-sm btn-outline" onclick="filterExamReview('all', document.querySelector('.review-btn[data-filter=all]'))">
+            Xem lại toàn bộ ${currentQuestions.length} câu
+          </button>
+        </div>
+      `;
+      renderJumpDrawerGrid();
+      return;
+    } else if (isExamSubmitted && examReviewFilter === "skipped") {
+      container.innerHTML = `
+        <div class="empty-filter-state">
+          <i class="ti-check" style="font-size: 42px; color: var(--brand-primary); margin-bottom: 12px; display: inline-block;"></i>
+          <h3>Tuyệt đối! Không bỏ sót câu nào.</h3>
+          <p>Bạn đã hoàn thành đủ 100% câu hỏi trong bài thi.</p>
+          <button class="btn btn-sm btn-outline" onclick="filterExamReview('all', document.querySelector('.review-btn[data-filter=all]'))">
+            Xem lại toàn bộ ${currentQuestions.length} câu
+          </button>
+        </div>
+      `;
+      renderJumpDrawerGrid();
+      return;
+    }
+  }
+
   let html = "";
   const markers = ["A", "B", "C", "D"];
-  currentQuestions.forEach((q, idx) => {
-    const qNum = idx + 1;
+  questionsToRender.forEach((q) => {
+    const qNum = currentQuestions.findIndex(item => item.id === q.id) + 1;
     const moduleLabel = MODULE_NAMES[q.module] || `Khối ${q.module}`;
     const isAnswered = userAnswers[q.id] !== undefined;
+    const userSelectedOpt = userAnswers[q.id];
 
     let cardStatusClass = "";
     let badgeResultHtml = "";
@@ -548,13 +573,13 @@ function renderQuestions() {
     if (isExamSubmitted) {
       if (!isAnswered) {
         cardStatusClass = "card-skipped";
-        badgeResultHtml = `<span class="badge-result skipped"><i class="ti-alert"></i> Chưa làm (Đáp án: ${markers[q.correctAnswer]})</span>`;
-      } else if (userAnswers[q.id] === q.correctAnswer) {
+        badgeResultHtml = `<span class="badge-result skipped"><i class="ti-alert"></i> Chưa làm &bull; Đáp án đúng: ${markers[q.correctAnswer]}</span>`;
+      } else if (userSelectedOpt === q.correctAnswer) {
         cardStatusClass = "card-correct";
         badgeResultHtml = `<span class="badge-result correct"><i class="ti-check"></i> Trả lời Đúng ✓</span>`;
       } else {
         cardStatusClass = "card-wrong";
-        badgeResultHtml = `<span class="badge-result wrong"><i class="ti-close"></i> Trả lời Sai ✗ (Đáp án: ${markers[q.correctAnswer]})</span>`;
+        badgeResultHtml = `<span class="badge-result wrong"><i class="ti-close"></i> Trả lời Sai ✗ (Bạn chọn: ${markers[userSelectedOpt]} &bull; Đúng: ${markers[q.correctAnswer]})</span>`;
       }
     } else if (isAnswered) {
       cardStatusClass = "answered-card";
@@ -572,7 +597,7 @@ function renderQuestions() {
             </span>
             ${badgeResultHtml}
           </div>
-          <div style="font-size: 13.5px; font-weight: 700; color: var(--text-secondary);">
+          <div style="font-size: 13.5px; font-weight: 700; color: var(--text-secondary); white-space: nowrap;">
             Câu ${qNum} / ${currentQuestions.length}
           </div>
         </div>
@@ -580,19 +605,37 @@ function renderQuestions() {
         <div class="options-grid">
     `;
 
-    const markers = ["A", "B", "C", "D"];
     q.options.forEach((opt, optIdx) => {
       let optClass = "option-btn";
       const isSelected = userAnswers[q.id] === optIdx;
+      let optTagHtml = "";
 
       if (mode === "practice") {
         if (isAnswered) {
-          if (optIdx === q.correctAnswer) optClass += " correct";
-          else if (isSelected) optClass += " wrong";
+          if (optIdx === q.correctAnswer) {
+            optClass += " correct";
+            optTagHtml = `<span class="opt-result-tag correct"><i class="ti-check"></i> Đáp án đúng</span>`;
+          } else if (isSelected) {
+            optClass += " wrong";
+            optTagHtml = `<span class="opt-result-tag wrong"><i class="ti-close"></i> Bạn chọn sai</span>`;
+          } else {
+            optClass += " dimmed";
+          }
         }
       } else if (isExamSubmitted) {
-        if (optIdx === q.correctAnswer) optClass += " correct";
-        else if (isSelected) optClass += " wrong";
+        if (optIdx === q.correctAnswer) {
+          optClass += " correct";
+          if (isSelected) {
+            optTagHtml = `<span class="opt-result-tag correct"><i class="ti-check"></i> Bạn chọn đúng</span>`;
+          } else {
+            optTagHtml = `<span class="opt-result-tag correct"><i class="ti-check"></i> Đáp án đúng</span>`;
+          }
+        } else if (isSelected) {
+          optClass += " wrong";
+          optTagHtml = `<span class="opt-result-tag wrong"><i class="ti-close"></i> Bạn đã chọn</span>`;
+        } else {
+          optClass += " dimmed";
+        }
       } else if (isSelected) {
         optClass += " selected";
       }
@@ -602,7 +645,8 @@ function renderQuestions() {
       html += `
         <button class="${optClass}" onclick="selectOption(${q.id}, ${optIdx})" ${isDisabled ? 'disabled' : ''}>
           <span class="option-marker">${markers[optIdx]}</span>
-          <span>${opt}</span>
+          <span style="flex:1;">${opt}</span>
+          ${optTagHtml}
         </button>
       `;
     });
@@ -668,6 +712,7 @@ function startExam() {
 
   userAnswers = {};
   isExamSubmitted = false;
+  examReviewFilter = "all";
 
   // Real exam standard: 60 questions stratified evenly across the 4 modules (15 questions per module)
   const m1 = QUIZ_BANK.filter(q => q.module === 1).sort(() => 0.5 - Math.random()).slice(0, 15);
@@ -774,6 +819,7 @@ async function submitExam() {
 
   clearInterval(examTimerInterval);
   isExamSubmitted = true;
+  examReviewFilter = "all";
 
   const submitBtn = document.getElementById("submitExamBtn");
   if (submitBtn) submitBtn.style.display = "none";
@@ -789,6 +835,9 @@ async function submitExam() {
   }
 
   let correctCount = 0;
+  let wrongCount = 0;
+  let skippedCount = 0;
+
   let modStats = {
     1: { c: 0, t: 0, name: "Khối 1: 2D Perception" },
     2: { c: 0, t: 0, name: "Khối 2: Quality & Lifecycle" },
@@ -798,13 +847,18 @@ async function submitExam() {
 
   currentQuestions.forEach(q => {
     modStats[q.module].t++;
-    if (userAnswers[q.id] === q.correctAnswer) {
+    if (userAnswers[q.id] === undefined) {
+      skippedCount++;
+    } else if (userAnswers[q.id] === q.correctAnswer) {
       correctCount++;
       modStats[q.module].c++;
+    } else {
+      wrongCount++;
     }
   });
 
-  const percent = Math.round((correctCount / currentQuestions.length) * 100);
+  const total = currentQuestions.length;
+  const percent = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
   const scorePercentEl = document.getElementById("scorePercentInside");
   const scoreSummaryEl = document.getElementById("scoreSummary");
@@ -812,8 +866,31 @@ async function submitExam() {
 
   if (scorePercentEl) scorePercentEl.innerText = `${percent}%`;
   if (scoreSummaryEl) {
-    scoreSummaryEl.innerText = `Bạn đã trả lời đúng ${correctCount} / ${currentQuestions.length} câu hỏi (${percent}%).`;
+    scoreSummaryEl.innerHTML = `Bạn đạt <strong>${correctCount}/${total} điểm</strong> &bull; Tỷ lệ chính xác: <strong>${percent}%</strong>`;
   }
+
+  // Populate 3-Way Metrics Breakdown Chips
+  const examCorrectEl = document.getElementById("examCorrectCount");
+  const examWrongEl = document.getElementById("examWrongCount");
+  const examSkippedEl = document.getElementById("examSkippedCount");
+  if (examCorrectEl) examCorrectEl.innerText = correctCount;
+  if (examWrongEl) examWrongEl.innerText = wrongCount;
+  if (examSkippedEl) examSkippedEl.innerText = skippedCount;
+
+  // Populate Review Filter Counters
+  const countAllEl = document.getElementById("filterCountAll");
+  const countWrongEl = document.getElementById("filterCountWrong");
+  const countSkippedEl = document.getElementById("filterCountSkipped");
+  const countCorrectEl = document.getElementById("filterCountCorrect");
+  if (countAllEl) countAllEl.innerText = total;
+  if (countWrongEl) countWrongEl.innerText = wrongCount;
+  if (countSkippedEl) countSkippedEl.innerText = skippedCount;
+  if (countCorrectEl) countCorrectEl.innerText = correctCount;
+
+  // Reset active button state on review toolbar
+  document.querySelectorAll(".review-btn").forEach(b => {
+    b.classList.toggle("active", b.getAttribute("data-filter") === "all");
+  });
 
   if (circleFg) {
     const circumference = 2 * Math.PI * 70;
@@ -832,8 +909,10 @@ async function submitExam() {
   }
 
   const resultDiv = document.getElementById("examResult");
-  resultDiv.style.display = "block";
-  resultDiv.scrollIntoView({ behavior: 'smooth' });
+  if (resultDiv) {
+    resultDiv.style.display = "block";
+    resultDiv.scrollIntoView({ behavior: 'smooth' });
+  }
 
   const usedSeconds = 90 * 60 - timeLeftSeconds;
   const uMins = Math.floor(usedSeconds / 60);
@@ -841,24 +920,30 @@ async function submitExam() {
   const timeTakenStr = `${uMins} phút ${uSecs} giây`;
   const timeTakenEl = document.getElementById("examTimeTakenText");
   if (timeTakenEl) {
-    timeTakenEl.innerHTML = `<i class="ti-timer"></i> Thời gian hoàn thành bài thi: <strong>${timeTakenStr}</strong>`;
+    timeTakenEl.innerHTML = `<i class="ti-timer"></i> Thời gian làm bài: <strong>${timeTakenStr}</strong>`;
   }
-  saveHistory(percent, correctCount, currentQuestions.length, timeTakenStr);
+
+  try {
+    saveHistory(percent, correctCount, total, timeTakenStr);
+  } catch (err) {
+    console.warn("Could not save history to localStorage:", err);
+  }
+
+  renderQuestions();
+  updateProgressTracker();
 
   if (percent >= 80) {
     triggerConfetti();
     playSound('correct');
     showToast("Chúc mừng! Bạn đã đạt kết quả xuất sắc", "ti-medall");
   } else {
-    showToast("Đã hoàn thành bài thi! Xem lại các câu giải thích bên dưới.", "ti-check-box");
+    showToast("Đã nộp bài thành công! Xem lại chi tiết từng câu bên dưới.", "ti-check-box");
   }
-
-  renderQuestions();
-  updateProgressTracker();
 }
 
 function resetQuiz() {
   const mode = document.getElementById("quizModeSelect").value;
+  examReviewFilter = "all";
   if (mode === "exam") {
     handleModeChange();
   } else {
@@ -881,13 +966,24 @@ function renderJumpDrawerGrid() {
   const grid = document.getElementById("jumpGrid");
   if (!grid) return;
 
+  const total = currentQuestions.length;
+  let correctCount = 0;
+  let wrongCount = 0;
+  let skippedCount = 0;
+
+  currentQuestions.forEach(q => {
+    if (userAnswers[q.id] === undefined) {
+      skippedCount++;
+    } else if (userAnswers[q.id] === q.correctAnswer) {
+      correctCount++;
+    } else {
+      wrongCount++;
+    }
+  });
+
   const subEl = document.querySelector(".drawer-modal-sub");
   if (subEl) {
-    if (isExamSubmitted) {
-      subEl.innerHTML = `Kết quả bài thi: <strong style="color:var(--success)">● Xanh: Đúng</strong> &nbsp;|&nbsp; <strong style="color:var(--danger)">● Đỏ: Sai</strong> &nbsp;|&nbsp; <strong style="color:var(--warning)">● Vàng: Chưa làm</strong>. Nhấp vào câu sai để xem ngay lời giải.`;
-    } else {
-      subEl.innerText = "Ô màu xanh là câu đã chọn đáp án. Bấm vào ô bất kỳ để nhảy thẳng tới câu hỏi đó.";
-    }
+    subEl.innerText = "Bấm vào ô bất kỳ để nhảy thẳng tới câu hỏi đó.";
   }
 
   let html = "";
@@ -907,7 +1003,7 @@ function renderJumpDrawerGrid() {
         titleStr = `Câu ${num}: Đúng ✓`;
       } else {
         statusClass = "wrong";
-        titleStr = `Câu ${num}: Sai ✗ (Bấm để xem giải thích)`;
+        titleStr = `Câu ${num}: Sai ✗ (Bạn chọn ${markers[userAnswers[q.id]]}, Đáp án: ${markers[q.correctAnswer]})`;
       }
     } else {
       statusClass = isAnswered ? "answered" : "";
@@ -924,6 +1020,17 @@ function renderJumpDrawerGrid() {
 }
 
 function jumpToQuestion(qId) {
+  if (isExamSubmitted && examReviewFilter !== "all") {
+    const existsInView = document.getElementById(`q-card-${qId}`);
+    if (!existsInView) {
+      examReviewFilter = "all";
+      document.querySelectorAll(".review-btn").forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-filter") === "all");
+      });
+      renderQuestions();
+    }
+  }
+
   const modal = document.getElementById("jumpModal");
   if (modal && modal.style.display === "flex") {
     modal.style.display = "none";

@@ -959,7 +959,7 @@ input[type="text"].input-control:focus {
   background: var(--border-strong);
   border-radius: var(--radius-pill);
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .sidebar-progress-fill {
@@ -1020,6 +1020,10 @@ input[type="text"].input-control:focus {
 
 .legend-dot.wrong {
   background: var(--danger);
+}
+
+.legend-dot.skipped {
+  background: var(--warning);
 }
 
 .sidebar-question-grid {
@@ -1422,6 +1426,33 @@ input[type="text"].input-control:focus {
   cursor: default;
 }
 
+.option-btn.dimmed {
+  opacity: 0.65;
+}
+
+.opt-result-tag {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.opt-result-tag.correct {
+  background: rgba(82, 131, 72, 0.2);
+  color: var(--success);
+}
+
+.opt-result-tag.wrong {
+  background: rgba(199, 93, 85, 0.2);
+  color: var(--danger);
+}
+
 /* Explanation Accordion Box */
 .explanation-box {
   margin-top: 16px;
@@ -1538,6 +1569,145 @@ input[type="text"].input-control:focus {
   margin: 0 auto 20px;
 }
 
+/* 3-Way Metrics Breakdown & Review Toolbar */
+.score-breakdown-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px auto 18px;
+  flex-wrap: wrap;
+  max-width: 620px;
+}
+
+.breakdown-chip {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.breakdown-chip strong {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.breakdown-chip.correct {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.breakdown-chip.wrong {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.breakdown-chip.skipped {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: var(--warning-border);
+}
+
+.exam-review-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 16px auto 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-medium);
+  max-width: 680px;
+}
+
+.review-toolbar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.review-filter-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.review-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.review-btn:hover {
+  border-color: var(--brand-primary);
+  transform: translateY(-1px);
+}
+
+.review-btn.active {
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  border-color: var(--brand-primary);
+}
+
+.review-btn.wrong.active {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #FFFFFF;
+}
+
+.review-btn.skipped.active {
+  background: var(--warning);
+  border-color: var(--warning);
+  color: #FFFFFF;
+}
+
+.review-btn.correct.active {
+  background: var(--success);
+  border-color: var(--success);
+  color: #FFFFFF;
+}
+
+.empty-filter-state {
+  text-align: center;
+  padding: 36px 20px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+}
+
+.empty-filter-state h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.empty-filter-state p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
 .score-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1652,6 +1822,8 @@ input[type="text"].input-control:focus {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  gap: 8px;
+  min-height: 32px;
 }
 
 .card-category-badge {
@@ -1660,9 +1832,14 @@ input[type="text"].input-control:focus {
   text-transform: uppercase;
   background: var(--brand-light);
   color: var(--brand-primary);
-  padding: 5px 14px;
+  padding: 5px 12px;
   border-radius: var(--radius-pill);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65%;
+  flex-shrink: 1;
 }
 
 .card-day-info {
@@ -1670,6 +1847,10 @@ input[type="text"].input-control:focus {
   font-weight: 700;
   color: var(--text-secondary);
   font-family: var(--font-mono);
+  white-space: nowrap !important;
+  flex-shrink: 0;
+  text-align: right;
+  margin-left: auto;
 }
 
 .card-body-content {
@@ -2474,6 +2655,36 @@ table.data-table tbody tr:hover {
     width: 100%;
   }
 
+  /* Score breakdown and Review Toolbar on Mobile */
+  .score-breakdown-row {
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px auto 14px;
+  }
+  .breakdown-chip {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 12.5px;
+  }
+  .exam-review-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 10px;
+  }
+  .review-filter-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+  .review-btn {
+    justify-content: center;
+    width: 100%;
+    font-size: 11.5px;
+    padding: 6px 8px;
+  }
+
   .score-stats-grid {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -2608,8 +2819,22 @@ table.data-table tbody tr:hover {
     right: 14px;
   }
   .card-category-badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    max-width: 58%;
+  }
+  .card-day-info {
     font-size: 11px;
-    padding: 4px 10px;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+  }
+  .opt-result-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+  .badge-result {
+    font-size: 10px;
+    padding: 2px 7px;
   }
   .flashcard-scene {
     height: 290px;
