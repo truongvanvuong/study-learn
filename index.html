@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>VinUni AV Data Track - Hệ Thống Ôn Thi Giữa Kỳ Xe Tự Lái</title>
+  <meta name="description"
+    content="Hệ thống ôn luyện trắc nghiệm, thẻ ghi nhớ flashcards 3D và sổ tay tra cứu chuẩn hóa cho chương trình Xe tự lái VinUni AI20K (Days 1 - 14).">
+
+  <!-- Google Font Quicksand Fallback & Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Themify Icons Stylesheet -->
+  <link rel="stylesheet" href="assets/themify-icons-font/themify-icons/themify-icons.css">
+
+  <!-- Core Modular Stylesheet (Quicksand Font + Palette #778873, #A1BC98, #DCCFC0, #FDF6ED) -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Background Confetti Animation Canvas -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- APP HEADER -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-section">
+        <div class="brand-icon-wrapper">
+          <i class="ti-car"></i>
+          VINUNI · AV TRACK
+        </div>
+        <div class="brand-titles">
+          <h1 class="app-title">Ôn Thi Giữa Kỳ: Xe Tự Lái</h1>
+          <p class="app-subtitle">AI20K Data Cohort</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <button class="btn-icon" id="soundToggle"
+          onclick="soundEnabled = !soundEnabled; showToast(soundEnabled ? 'Đã bật âm thanh phản hồi' : 'Đã tắt âm thanh', 'ti-volume'); this.innerHTML = soundEnabled ? '<i class=\'ti-volume\'></i> Âm thanh' : '<i class=\'ti-volume\'></i> Tắt tiếng';">
+          <i class="ti-volume"></i> Âm thanh
+        </button>
+        <button class="btn-icon" id="themeToggle" onclick="toggleTheme()">
+          <i class="ti-shine"></i> Tối
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS WITH THEMIFY ICONS -->
+  <nav class="nav-tab-bar" aria-label="Điều hướng chính">
+    <div class="nav-tabs-container">
+      <button class="tab-button active" data-tab="quiz" onclick="switchTab('quiz')">
+        <i class="ti-pencil-alt"></i>
+        <span>Luyện Thi Trắc Nghiệm</span>
+        <span class="tab-badge">40 Câu</span>
+      </button>
+      <button class="tab-button" data-tab="flashcards" onclick="switchTab('flashcards')">
+        <i class="ti-layers"></i>
+        <span>Thẻ Ghi Nhớ 3D</span>
+        <span class="tab-badge">26 Thẻ</span>
+      </button>
+      <button class="tab-button" data-tab="cheatsheet" onclick="switchTab('cheatsheet')">
+        <i class="ti-book"></i>
+        <span>Sổ Tay & Tra Cứu</span>
+        <span class="tab-badge">5 Mục</span>
+      </button>
+      <button class="tab-button" data-tab="history" onclick="switchTab('history')">
+        <i class="ti-bar-chart"></i>
+        <span>Lịch Sử Làm Bài</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN VIEWPORT -->
+  <main class="main-content">
+
+    <!-- TAB 1: QUIZ / EXAM SIMULATOR -->
+    <section id="quiz-tab" class="tab-pane active" aria-labelledby="tab-quiz">
+      <div class="ui-card">
+
+        <!-- Controls Toolbar -->
+        <div class="quiz-toolbar">
+          <div class="toolbar-controls-left">
+            <div class="control-field">
+              <label for="quizModeSelect">Chế độ:</label>
+              <select id="quizModeSelect" class="select-control" onchange="handleModeChange()">
+                <option value="practice">Ôn tập tự do (Xem đáp án & giải thích tức thì)</option>
+                <option value="exam">Thi thử tính giờ (40 câu ngẫu nhiên - 45 phút)</option>
+              </select>
+            </div>
+
+            <div class="control-field" id="filterGroup">
+              <label for="moduleFilter">Chủ đề:</label>
+              <select id="moduleFilter" class="select-control" onchange="loadQuestions()">
+                <option value="all">Toàn bộ 14 ngày (40 câu hỏi)</option>
+                <option value="1">Khối 1: Nhận thức 2D (Ngày 1-5)</option>
+                <option value="2">Khối 2: Chất lượng & Vòng đời (Ngày 6-8)</option>
+                <option value="3">Khối 3: Cảm biến chuyên biệt 2D (Ngày 9-11)</option>
+                <option value="4">Khối 4: 3D LiDAR & Multi-Sensor (Ngày 12-14)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-controls-right">
+            <!-- Practice Mode Stopwatch -->
+            <div id="practiceTimer" class="exam-timer-chip practice-timer" onclick="togglePracticeTimer()" title="Nhấp để Tạm dừng / Tiếp tục đếm giờ làm bài">
+              <i class="ti-timer"></i>
+              <span>Thời gian làm bài:</span>
+              <strong id="practiceTimerDisplay">00:00</strong>
+              <i id="practiceTimerIcon" class="ti-control-pause" style="font-size: 11px; opacity: 0.75; margin-left: 2px;"></i>
+            </div>
+
+            <!-- Exam Mode Countdown Timer -->
+            <div id="examTimer" class="exam-timer-chip" style="display: none;">
+              <i class="ti-timer"></i>
+              <span>Còn lại:</span>
+              <strong id="timerDisplay">45:00</strong>
+            </div>
+
+            <button class="btn btn-success" id="startExamBtn" style="display: none;" onclick="startExam()">
+              <i class="ti-control-play"></i> Bắt Đầu Thi Thử
+            </button>
+            <button class="btn btn-danger" id="submitExamBtn" style="display: none;" onclick="submitExam()">
+              <i class="ti-check"></i> Nộp Bài Thi
+            </button>
+            <button class="btn btn-outline" id="resetBtn" onclick="resetQuiz()">
+              <i class="ti-reload"></i> Làm Lại
+            </button>
+          </div>
+        </div>
+
+        <!-- Realtime Progress Tracker & Quick Jumper -->
+        <div class="quiz-progress-banner" id="quizProgressBanner">
+          <div class="progress-info">
+            <i class="ti-stats-up" style="color: var(--brand-primary); font-size: 16px;"></i>
+            <span>Tiến độ hoàn thành:</span>
+            <span id="progressCountText">Đã trả lời: 0 / 40 câu (0%)</span>
+          </div>
+          <div class="progress-track-wrapper">
+            <div class="progress-track-fill" id="progressTrackFill"></div>
+          </div>
+          <button class="quick-jump-trigger" onclick="toggleJumpDrawer()">
+            <i class="ti-layout-grid3"></i> Danh sách câu hỏi
+          </button>
+        </div>
+
+        <!-- Exam Result Hero Banner -->
+        <div id="examResult" class="score-banner" style="display: none;">
+          <h2 class="score-heading">BÁO CÁO KẾT QUẢ BÀI THI THỬ</h2>
+          <p class="score-summary-text" id="scoreSummary">Đang tính toán kết quả...</p>
+          <div id="examTimeTakenText" style="font-size: 14.5px; font-weight: 700; color: var(--brand-primary); margin: -10px auto 16px;"></div>
+
+          <div class="score-circle-wrapper">
+            <svg class="score-circle-svg" viewBox="0 0 160 160">
+              <circle class="score-circle-bg" cx="80" cy="80" r="70"></circle>
+              <circle class="score-circle-fg" id="scoreCircleFg" cx="80" cy="80" r="70"></circle>
+            </svg>
+            <div class="score-number-inside" id="scorePercentInside">0%</div>
+          </div>
+
+          <div class="score-stats-grid">
+            <div class="stat-card">
+              <div class="stat-val" id="statK1" style="color: var(--brand-primary);">0%</div>
+              <div class="stat-lbl"><i class="ti-tag"></i> Khối 1: 2D Perception (Ngày 1-5)</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" id="statK2" style="color: var(--success);">0%</div>
+              <div class="stat-lbl"><i class="ti-tag"></i> Khối 2: Quality & Lifecycle (Ngày 6-8)</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" id="statK3" style="color: var(--warning);">0%</div>
+              <div class="stat-lbl"><i class="ti-tag"></i> Khối 3: Cabin & SVM 360° (Ngày 9-11)</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" id="statK4" style="color: var(--danger);">0%</div>
+              <div class="stat-lbl"><i class="ti-tag"></i> Khối 4: 3D LiDAR & Fusion (Ngày 12-14)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions Rendering Container -->
+        <div id="questionContainer"></div>
+
+      </div>
+
+      <!-- Floating Quiz Timer & Quick HUD (Ghim hiển thị khi làm bài) -->
+      <div id="floatingQuizHud" class="floating-quiz-hud">
+        <div class="hud-timer-badge" id="hudTimerBadge" onclick="handleHudTimerClick()" title="Nhấp để Tạm dừng / Tiếp tục đếm giờ làm bài">
+          <i class="ti-timer"></i>
+          <span class="hud-label" id="hudTimerLabel">Thời gian:</span>
+          <strong class="hud-time-val" id="hudTimerDisplay">00:00</strong>
+          <i id="hudTimerToggleIcon" class="ti-control-pause" style="font-size: 11px; opacity: 0.8; margin-left: 2px;"></i>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-progress-info">
+          <i class="ti-stats-up" style="color: var(--brand-primary); font-size: 13px;"></i>
+          <span id="hudProgressText">0 / 40 câu</span>
+        </div>
+        <button class="hud-action-btn" onclick="toggleJumpDrawer()" title="Xem bảng 40 câu hỏi">
+          <i class="ti-layout-grid3"></i>
+          <span class="hud-btn-text">Bảng câu</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 2: 3D FLASHCARDS -->
+    <section id="flashcards-tab" class="tab-pane" aria-labelledby="tab-flashcards">
+      <div class="ui-card">
+
+        <div class="quiz-toolbar">
+          <div class="toolbar-controls-left">
+            <div class="control-field">
+              <label for="flashcardFilter">Lọc thẻ:</label>
+              <select id="flashcardFilter" class="select-control" onchange="filterFlashcards()">
+                <option value="all">Tất cả thẻ (26 thẻ cốt lõi)</option>
+                <option value="unlearned">Chỉ thẻ chưa thuộc</option>
+                <option value="1">Khối 1: Nhận thức 2D (Ngày 1-5)</option>
+                <option value="2">Khối 2: Chất lượng & Vòng đời (Ngày 6-8)</option>
+                <option value="3">Khối 3: Cabin & SVM (Ngày 9-11)</option>
+                <option value="4">Khối 4: 3D LiDAR & Fusion (Ngày 12-14)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-controls-right">
+            <div class="flashcard-progress-pill" id="flashcardCounter">
+              Thẻ <span class="active-counter">1</span> / 26 &bull; Đã thuộc: 0/26
+            </div>
+          </div>
+        </div>
+
+        <div class="flashcard-area">
+          <!-- 3D Flippable Card -->
+          <div class="flashcard-scene" id="flashcardScene" onclick="flipCard()" role="button" tabindex="0"
+            aria-label="Bấm để lật thẻ">
+            <div class="flashcard-object">
+
+              <!-- Front Face -->
+              <div class="card-face card-face-front">
+                <div class="card-header-bar">
+                  <span class="card-category-badge" id="cardCategory">Khái niệm</span>
+                  <span class="card-day-info" id="cardDay">Ngày 1</span>
+                </div>
+                <div class="card-body-content">
+                  <div class="card-prompt-text" id="cardFrontText">Câu hỏi mặt trước đang tải...</div>
+                </div>
+                <div class="card-footer-hint">
+                  <i class="ti-hand-point-up"></i>
+                  <span>Nhấp chuột hoặc bấm Phím Cách (Space) để lật đáp án</span>
+                </div>
+              </div>
+
+              <!-- Back Face -->
+              <div class="card-face card-face-back">
+                <div class="card-header-bar">
+                  <span class="card-category-badge" style="background: rgba(82, 131, 72, 0.18); color: var(--success);">
+                    <i class="ti-light-bulb"></i> Đáp án &bull; Giải thích chuyên sâu
+                  </span>
+                  <span class="card-day-info"><i class="ti-check"></i> Chuẩn Kiến Thức</span>
+                </div>
+                <div class="card-body-content">
+                  <div class="card-answer-text" id="cardBackText">Nội dung giải thích chi tiết...</div>
+                </div>
+                <div class="card-footer-hint">
+                  <i class="ti-hand-point-up"></i>
+                  <span>Nhấp chuột để lật lại mặt trước</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flashcard-actions-row">
+            <button class="btn btn-outline" onclick="prevCard()">
+              <i class="ti-arrow-left"></i> Thẻ Trước
+            </button>
+            <button class="btn btn-secondary" style="border-color: var(--warning); color: var(--warning);"
+              onclick="markCard(false)">
+              <i class="ti-alert"></i> Cần Ôn Lại
+            </button>
+            <button class="btn btn-success" onclick="markCard(true)">
+              <i class="ti-check"></i> Đã Thuộc
+            </button>
+            <button class="btn" onclick="nextCard()">
+              Thẻ Kế Tiếp <i class="ti-arrow-right"></i>
+            </button>
+          </div>
+
+          <div class="keyboard-hint">
+            <span>Phím tắt:</span>
+            <span class="kbd-key">Space</span> lật thẻ &bull;
+            <span class="kbd-key">&larr;</span> thẻ trước &bull;
+            <span class="kbd-key">&rarr;</span> thẻ tiếp theo
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: CHEAT SHEET & KNOWLEDGE SEARCH -->
+    <section id="cheatsheet-tab" class="tab-pane" aria-labelledby="tab-cheatsheet">
+      <div class="ui-card">
+
+        <div class="search-container">
+          <span class="search-icon-adornment"><i class="ti-search"></i></span>
+          <input type="text" id="cheatSearchInput" class="search-input-field"
+            placeholder="Tìm kiếm nhanh kiến thức (vd: PointPillars, Uber ATG, ToF LiDAR, Cohen's Kappa, Critical, Z-Translation...)"
+            oninput="searchCheatSheet()">
+        </div>
+
+        <div class="quick-tags-cloud">
+          <span class="quick-tag-label"><i class="ti-bookmark"></i> Gợi ý nhanh:</span>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('LiDAR')">#LiDAR</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('PointPillars')">#PointPillars</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('Critical')">#Critical Gate</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('Uber')">#Uber ATG</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('PERCLOS')">#PERCLOS</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('Kappa')">#Cohen's Kappa</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('Temporal')">#7 Temporal Errors</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('VinFast')">#VinFast REP-103</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('')"><i class="ti-close"></i> Xóa lọc</button>
+        </div>
+
+        <div id="cheatListContainer"></div>
+
+      </div>
+    </section>
+
+    <!-- TAB 4: HISTORY & ANALYTICS -->
+    <section id="history-tab" class="tab-pane" aria-labelledby="tab-history">
+      <div class="ui-card">
+        <div class="ui-card-header">
+          <h2 class="ui-card-title">
+            <i class="ti-bar-chart"></i>
+            <span>Bảng Theo Dõi Tiến Trình & Lịch Sử Thi Thử</span>
+          </h2>
+          <button class="btn btn-outline btn-danger" onclick="clearHistory()">
+            <i class="ti-trash"></i> Xóa Toàn Bộ Lịch Sử
+          </button>
+        </div>
+
+        <div class="history-stats-overview" id="historyOverviewTiles"></div>
+
+        <div id="historyList"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- QUICK QUESTION JUMP MODAL -->
+  <div id="jumpModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div
+      style="background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); padding: 24px; width: 90%; max-width: 520px; box-shadow: var(--shadow-lg);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3
+          style="font-size: 18px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+          <i class="ti-layout-grid3" style="color: var(--brand-primary);"></i>
+          <span>Chọn Câu Hỏi Cần Nhảy Tới</span>
+        </h3>
+        <button style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-secondary);"
+          onclick="toggleJumpDrawer()">
+          <i class="ti-close"></i>
+        </button>
+      </div>
+      <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 14px;">Các ô màu có viền xanh là câu bạn
+        đã chọn đáp án.</p>
+      <div class="jump-grid" id="jumpGrid"></div>
+    </div>
+  </div>
+
+  <!-- Modular JavaScript Logic -->
+  <script src="app.js"></script>
+</body>
+
+</html>
