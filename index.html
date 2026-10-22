@@ -58,17 +58,17 @@
       <button class="tab-button active" data-tab="quiz" onclick="switchTab('quiz')">
         <i class="ti-pencil-alt"></i>
         <span>Luyện Thi Trắc Nghiệm</span>
-        <span class="tab-badge">40 Câu</span>
+        <span class="tab-badge" id="quizTabBadge">120 Câu</span>
       </button>
       <button class="tab-button" data-tab="flashcards" onclick="switchTab('flashcards')">
         <i class="ti-layers"></i>
         <span>Thẻ Ghi Nhớ 3D</span>
-        <span class="tab-badge">26 Thẻ</span>
+        <span class="tab-badge" id="flashcardTabBadge">50 Thẻ</span>
       </button>
       <button class="tab-button" data-tab="cheatsheet" onclick="switchTab('cheatsheet')">
         <i class="ti-book"></i>
         <span>Sổ Tay & Tra Cứu</span>
-        <span class="tab-badge">5 Mục</span>
+        <span class="tab-badge" id="cheatsheetTabBadge">10 Chuyên Mục</span>
       </button>
       <button class="tab-button" data-tab="history" onclick="switchTab('history')">
         <i class="ti-bar-chart"></i>
@@ -84,7 +84,7 @@
     <section id="quiz-tab" class="tab-pane active" aria-labelledby="tab-quiz">
 
       <!-- STICKY TOP STATUS BAR (Ghim trên đỉnh khi cuộn làm bài - Mobile & Tablet) -->
-      <div id="stickyQuizBar" class="sticky-quiz-bar">
+      <div id="stickyQuizBar" class="sticky-quiz-bar is-hidden">
         <div class="sticky-bar-left">
           <div id="stickyTimerChip" class="sticky-timer-chip" onclick="handleTimerClick()"
             title="Nhấp để Tạm dừng / Tiếp tục đếm giờ">
@@ -97,8 +97,8 @@
 
         <div class="sticky-bar-center">
           <div class="sticky-progress-info">
-            <span><i class="ti-stats-up"></i> <strong id="stickyAnsweredText">0/40</strong> câu</span>
-            <span class="sticky-unanswered-badge" id="stickyUnansweredTag">Còn 40 câu</span>
+            <span><i class="ti-stats-up"></i> <strong id="stickyAnsweredText">0/60</strong> câu</span>
+            <span class="sticky-unanswered-badge" id="stickyUnansweredTag">Còn 60 câu</span>
           </div>
           <div class="sticky-progress-line">
             <div id="stickyProgressFill" class="sticky-progress-fill" style="width: 0%;"></div>
@@ -106,7 +106,7 @@
         </div>
 
         <div class="sticky-bar-right">
-          <button class="sticky-drawer-btn" onclick="toggleJumpDrawer()" title="Xem bảng 40 câu hỏi & câu chưa làm">
+          <button class="sticky-drawer-btn" onclick="toggleJumpDrawer()" title="Xem bảng danh sách câu hỏi & câu chưa làm">
             <i class="ti-layout-grid3"></i>
             <span class="sticky-btn-text">Bảng câu</span>
           </button>
@@ -127,25 +127,25 @@
               <label for="quizModeSelect">Chế độ:</label>
               <select id="quizModeSelect" class="select-control" onchange="handleModeChange()">
                 <option value="practice">Ôn tập tự do (Xem đáp án & giải thích)</option>
-                <option value="exam">Thi thử tính giờ (40 câu ngẫu nhiên - 45 phút)</option>
+                <option value="exam">Thi thử tính giờ (60 câu ngẫu nhiên - 90 phút)</option>
               </select>
             </div>
 
             <div class="control-field" id="filterGroup">
               <label for="moduleFilter">Chủ đề:</label>
               <select id="moduleFilter" class="select-control" onchange="loadQuestions()">
-                <option value="all">Toàn bộ 14 ngày (40 câu hỏi)</option>
-                <option value="1">Khối 1: Nhận thức 2D (Ngày 1-5)</option>
-                <option value="2">Khối 2: Chất lượng & Vòng đời (Ngày 6-8)</option>
-                <option value="3">Khối 3: Cảm biến chuyên biệt 2D (Ngày 9-11)</option>
-                <option value="4">Khối 4: 3D LiDAR & Multi-Sensor (Ngày 12-14)</option>
+                <option value="all">Toàn bộ 14 ngày (120 câu hỏi)</option>
+                <option value="1">Khối 1: Nhận thức 2D (Ngày 1-5 - 30 câu)</option>
+                <option value="2">Khối 2: Chất lượng & Vòng đời (Ngày 6-8 - 30 câu)</option>
+                <option value="3">Khối 3: Cảm biến chuyên biệt 2D (Ngày 9-11 - 30 câu)</option>
+                <option value="4">Khối 4: 3D LiDAR & Multi-Sensor (Ngày 12-14 - 30 câu)</option>
               </select>
             </div>
           </div>
 
           <div class="toolbar-controls-right">
             <button class="btn btn-success" id="startExamBtn" style="display: none;" onclick="startExam()">
-              <i class="ti-control-play"></i> Bắt Đầu Thi Thử
+              <i class="ti-control-play"></i> Bắt Đầu Thi Thử (60 Câu - 90 Phút)
             </button>
           </div>
         </div>
@@ -192,7 +192,7 @@
             <div id="questionContainer"></div>
           </div>
 
-          <!-- Desktop Sticky Side Panel (Trợ lý thi & Điều hướng 40 câu) -->
+          <!-- Desktop Sticky Side Panel (Trợ lý thi & Điều hướng) -->
           <aside class="quiz-desktop-sidebar" id="quizDesktopSidebar">
             <div class="desktop-sidebar-inner">
               <div class="sidebar-timer-box">
@@ -212,23 +212,23 @@
               <div class="sidebar-progress-box">
                 <div class="sidebar-progress-header">
                   <span>Tiến độ bài thi:</span>
-                  <strong id="sidebarProgressFraction">0 / 40 câu</strong>
+                  <strong id="sidebarProgressFraction">0 / 60 câu</strong>
                 </div>
                 <div class="sidebar-progress-bar">
                   <div class="sidebar-progress-fill" id="sidebarProgressFill" style="width: 0%;"></div>
                 </div>
                 <div class="sidebar-unanswered-tag" id="sidebarUnansweredTag">
-                  <i class="ti-alert"></i> Còn <strong>40 câu</strong> chưa làm
+                  <i class="ti-alert"></i> Còn <strong>60 câu</strong> chưa làm
                 </div>
               </div>
 
               <div class="sidebar-grid-box">
                 <div class="sidebar-grid-title">
-                  <span>Lưới 40 Câu Hỏi:</span>
+                  <span>Lưới Câu Hỏi Bài Thi:</span>
                   <span class="legend-note"><span class="legend-dot done"></span> Đã làm</span>
                 </div>
                 <div class="sidebar-question-grid" id="sidebarQuestionGrid">
-                  <!-- 40 clickable nodes -->
+                  <!-- Dynamic clickable nodes -->
                 </div>
               </div>
 
@@ -257,7 +257,7 @@
             <div class="control-field">
               <label for="flashcardFilter">Lọc thẻ:</label>
               <select id="flashcardFilter" class="select-control" onchange="filterFlashcards()">
-                <option value="all">Tất cả thẻ (26 thẻ cốt lõi)</option>
+                <option value="all">Tất cả thẻ (50 thẻ chuyên sâu)</option>
                 <option value="unlearned">Chỉ thẻ chưa thuộc</option>
                 <option value="1">Khối 1: Nhận thức 2D (Ngày 1-5)</option>
                 <option value="2">Khối 2: Chất lượng & Vòng đời (Ngày 6-8)</option>
@@ -366,7 +366,11 @@
           <button class="quick-tag-chip" onclick="setCheatSearchTag('PERCLOS')">#PERCLOS</button>
           <button class="quick-tag-chip" onclick="setCheatSearchTag('Kappa')">#Cohen's Kappa</button>
           <button class="quick-tag-chip" onclick="setCheatSearchTag('Temporal')">#7 Temporal Errors</button>
-          <button class="quick-tag-chip" onclick="setCheatSearchTag('VinFast')">#VinFast REP-103</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('format')">#Định Dạng 2D</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('sensor')">#So Sánh Cảm Biến</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('metric')">#Thước Đo AI</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('governance')">#Pháp Lý Luật 91</button>
+          <button class="quick-tag-chip" onclick="setCheatSearchTag('3-Pass')">#Quy Trình 3 Lượt</button>
           <button class="quick-tag-chip" onclick="setCheatSearchTag('')"><i class="ti-close"></i> Xóa lọc</button>
         </div>
 
@@ -397,12 +401,13 @@
   </main>
 
   <!-- QUICK QUESTION JUMP MODAL -->
-  <div id="jumpModal" class="drawer-modal-backdrop" style="display: none;" onclick="if(event.target===this) toggleJumpDrawer()">
+  <div id="jumpModal" class="drawer-modal-backdrop" style="display: none;"
+    onclick="if(event.target===this) toggleJumpDrawer()">
     <div class="drawer-modal-card">
       <div class="drawer-modal-header">
         <h3 class="drawer-modal-title">
           <i class="ti-layout-grid3"></i>
-          <span>Bảng Lưới 40 Câu Hỏi</span>
+          <span>Bảng Lưới Câu Hỏi</span>
         </h3>
         <button class="drawer-modal-close" onclick="toggleJumpDrawer()" title="Đóng bảng câu">
           <i class="ti-close"></i>
@@ -435,7 +440,8 @@
     <span class="back-to-top-text">Lên đầu</span>
   </button>
 
-  <!-- Modular JavaScript Logic -->
+  <!-- Modular JavaScript Logic (constants.js loaded first, compatible with local file:// and web servers) -->
+  <script src="constants.js"></script>
   <script src="app.js"></script>
 </body>
 
