@@ -708,6 +708,9 @@ function handleModeChange() {
   userAnswers = {};
 
   if (mode === "exam") {
+    currentQuestions = [...QUIZ_BANK];
+    updateProgressTracker();
+
     if (filterGroup) filterGroup.style.display = "none";
     if (practiceTimerBadge) practiceTimerBadge.style.display = "none";
     if (startBtn) {
@@ -721,7 +724,8 @@ function handleModeChange() {
     if (examTimerBadge) {
       examTimerBadge.style.display = "inline-flex";
       examTimerBadge.classList.remove("urgent");
-      document.getElementById("timerDisplay").innerText = "45:00";
+      const td = document.getElementById("timerDisplay");
+      if (td) td.innerText = "45:00";
     }
     if (progressBanner) progressBanner.style.display = "none";
 
@@ -975,8 +979,11 @@ function selectOption(qId, optIdx) {
 }
 
 function startExam() {
-  document.getElementById("startExamBtn").style.display = "none";
-  document.getElementById("submitExamBtn").style.display = "inline-flex";
+  const startBtn = document.getElementById("startExamBtn");
+  if (startBtn) startBtn.style.display = "none";
+
+  const submitBtn = document.getElementById("submitExamBtn");
+  if (submitBtn) submitBtn.style.display = "inline-flex";
 
   const stickySubBtn = document.getElementById("stickySubmitBtn");
   if (stickySubBtn) stickySubBtn.style.display = "inline-flex";
@@ -984,13 +991,20 @@ function startExam() {
   const sidebarSubBtn = document.getElementById("sidebarSubmitBtn");
   if (sidebarSubBtn) sidebarSubBtn.style.display = "inline-flex";
 
-  document.getElementById("examResult").style.display = "none";
+  const examResult = document.getElementById("examResult");
+  if (examResult) examResult.style.display = "none";
+
   userAnswers = {};
   isExamSubmitted = false;
 
   currentQuestions = [...QUIZ_BANK].sort(() => 0.5 - Math.random());
   renderQuestions();
   updateProgressTracker();
+
+  const qContainer = document.getElementById("questionContainer");
+  if (qContainer) {
+    qContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   timeLeftSeconds = 45 * 60;
   clearInterval(examTimerInterval);
